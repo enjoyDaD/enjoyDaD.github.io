@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UI팀 AI 스터디</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:'Pretendard','Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+    background:#F0F0F0;
+    color:#191919;
+    font-size:18px;
+    line-height:1.7;
+  }
+
+  /* ── 월탭 네비 ── */
+  .mnav { background:#fff; border-bottom:1.5px solid #E0E0E0; position:sticky; top:0; z-index:100; }
+  .mnav-in { max-width:880px; margin:0 auto; padding:0 40px; display:flex; }
+  .mtab { padding:15px 28px; font-size:17px; font-weight:700; color:#888; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-1.5px; transition:color .15s, border-color .15s; }
+  .mtab:hover { color:#2196F3; }
+  .mtab.on { color:#2196F3; border-bottom-color:#2196F3; }
+  .mcont { display:none; }
+  .mcont.on { display:block; }
+
+  /* ── 래퍼 ── */
+  .wrap { max-width:880px; margin:0 auto; padding:48px 40px 100px; }
+
+  /* ── 문서 헤더 (검정) ── */
+  .doc-hd {
+    background:#5BB0FF; border-radius:0;
+    padding:40px 44px; margin-bottom:12px;
+    display:flex; align-items:flex-end; justify-content:space-between; gap:0px;
+  }
+  .doc-title { font-size:42px; font-weight:600; line-height:1.1; letter-spacing:-.03em; color:#5BB0FF; }
+  .doc-title em { font-style:normal; color:#ffffff; }
+  .doc-hd-right { display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0; }
+  .pro-badge { font-size:15px; font-weight:400; padding:5px 14px; border-radius:4px; background:#2196F3; color:#fff; }
+  .doc-sub { font-size:16px; color:#666; }
+
+  /* ── 섹션 카드 (흰 박스) ── */
+  .sec-card { background:#fff; border-radius:0px; margin-bottom:12px; overflow:hidden; }
+
+  /* 섹션 타이틀 (검정) — 헤더와 동일 비중 */
+  .sec-hd {
+    background:#191919;
+    padding:18px 28px;
+    display:flex; align-items:center; gap:16px;
+  }
+  .sec-num { font-size:15px; font-weight:700; color:#5BB0FF; letter-spacing:.12em; }
+  .sec-ttl { font-size:26px; font-weight:600; color:#fff; letter-spacing:-.02em; }
+
+  /* 섹션 바디 */
+  .sec-body { padding:28px 28px 32px; }
+
+  /* ── 일반 텍스트 블록 ── */
+  .desc { font-size:18px; color:#5C5C5C; line-height:1.7; margin-bottom:20px; }
+  .desc strong { color:#191919; }
+
+  /* ── 구분 소제목 (박스 없음, 선만) ── */
+  .sub-ttl { font-size:19px; font-weight:700; color:#191919; margin:28px 0 0px; }
+  .sub-ttl:first-child { margin-top:0; }
+
+  /* ── 비교 테이블 ── */
+  .tbl { width:100%; border-collapse:collapse; font-size:17px; }
+  .tbl th { background:#ddd; color:#191919; padding:11px 16px; text-align:left; font-weight:400; font-size:16px; border-right:1px solid #F0F0F0;text-align: center }
+  .tbl th:first-child { border-radius:0;background:#ddd }
+  .tbl td { padding:11px 16px; border-bottom:1px solid #F0F0F0; border-right:1px solid #F0F0F0; color:#464646; text-align: center}
+  .tbl tr:last-child td { border-bottom:1px solid #eee; }
+  .tbl .rh { font-weight:400; color:#191919; width:150px; background:#eee; }
+  .ok { color:#191919; }
+  .no { color:#B71C1C; }
+
+  /* ── 모델 3단 ── */
+  .model-row { display:grid; grid-template-columns:repeat(3,1fr); gap:0; border:1.5px solid #E8E8E8; border-radius:0px; overflow:hidden; margin-bottom:24px; }
+  .mc { padding:20px 22px; border-right:1px solid #E8E8E8; position:relative; }
+  .mc:last-child { border-right:none; }
+  .mc::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; }
+  .mc.m1::before { background:#eee; }
+  .mc.m2::before { background:#eee; }
+  .mc.m3::before { background:#eee; }
+  .mc.m2 { background:#fff; }
+  .mc-lbl { font-size:14px; font-weight:400; color:#888; margin-bottom:6px; margin-top:4px; }
+  .mc-name { font-size:22px; font-weight:600; color:#191919; margin-bottom:6px; }
+  .mc-desc { font-size:16px; color:#5C5C5C; line-height:1.5; margin-bottom:14px; }
+  .chips { display:flex; flex-wrap:wrap; gap:5px; }
+  .chip { font-size:15px; font-weight:400; padding:3px 10px; border-radius:20px; }
+  .cg { background:#E3F2FD; color:#1565C0; }
+  .cb { background:#E3F2FD; color:#1565C0; }
+  .cn { background:#E3F2FD; color:#1565C0;}
+  .cd { background:#F6F6F6; color:#464646; }
+
+  /* ── 토큰 테이블 ── */
+  .ttbl { width:100%; border-collapse:collapse; font-size:17px; }
+  .ttbl th { background:#999999; color:#fff; padding:11px 16px; text-align:left; font-weight:400; font-size:16px; text-align: center}
+  .ttbl td { padding:11px 16px; border-bottom:1px solid #F0F0F0; color:#fff; vertical-align:middle; }
+  .ttbl tr:last-child td { border-bottom:none; border-bottom:1px solid #F0F0F0; }
+   .ttbl tr td:last-child { border-right:1px solid #F0F0F0; }  
+  .ttbl .rh { font-weight:400; color:#191919; width:150px; background: #eee; }
+  .bw { display:flex; align-items:center; gap:10px; }
+  .br { height:7px; border-radius:4px; background:#F0F0F0; flex:1; overflow:hidden; }
+  .bf { height:100%; border-radius:4px; }
+  .f1{background:#37E686;width:12%} .f2{background:#37E686;width:28%}
+  .f3{background:#2196F3;width:55%} .f4{background:#F43939;width:80%} .f5{background:#F43939;width:100%}
+  .bl { font-size:15px; font-weight:700; min-width:52px; }
+  .blg{color:#1E6B35} .blb{color:#1565C0} .blr{color:#B71C1C}
+
+  /* ── 기능 블록 (흰 박스 안 리스트) ── */
+  .func-list { display:flex; flex-direction:column; gap:0; }
+  .func-item { border-bottom:1px solid #F0F0F0; }
+  .func-item:last-child { border-bottom:none; }
+
+  .func-hd { display:flex; align-items:center; gap:0; cursor:pointer; user-select:none; }
+  .func-bar { width:5px; flex-shrink:0; align-self:stretch; border-radius:0; }
+  .fb-chat   { background:#2196F3; }
+  .fb-cowork { background:#37E686; }
+  .fb-code   { background:#464646; }
+  .fb-design { background:#F43939; }
+
+  .func-hd-in { flex:1; padding:18px 24px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .func-hd-left { display:flex; align-items:baseline; gap:12px;}
+  .func-tag { font-size:14px; font-weight:700; color:#888; letter-spacing:.08em; }
+  .func-name { font-size:22px; font-weight:600; color:#191919; }
+  .func-one { font-size:16px; color:#888; }
+  .func-mdl { font-size:15px; font-weight:700; padding:4px 12px; border-radius:20px; white-space:nowrap; }
+  .fm-c { background:#2196F3; color:#fff; }
+  .fm-cw { background:#37E686; color:#1E6B35; }
+  .fm-cd { background:#464646; color:#fff; }
+  .fm-d { background:#F43939; color:#fff; }
+
+  .func-body { display:none; padding:0 24px 24px 29px; }
+  .func-body.op { display:block; }
+
+  /* 2단 */
+  .fcols { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  .fcol-ttl { font-size:15px; font-weight:700; color:#888; letter-spacing:.08em; margin-bottom:12px; padding-bottom:6px; border-bottom:1px solid #EBEBEB; }
+
+  /* 피처 리스트 — 박스 없이 줄글 */
+  .fl { display:flex; flex-direction:column; gap:10px;  }
+  .fi { display:flex; gap:10px; font-size:16px; color:#727272; line-height:1.6; }
+  .fi strong { color:#191919;}
+  .fi-icon { flex-shrink:0; }
+
+  /* 유즈케이스 — 박스 없이 구분선 */
+  .ul { display:flex; flex-direction:column; gap:12px; }
+  .ui { padding-left:14px; border-left:3px solid #E0E0E0; }
+  .ui.uc { border-left-color:#2196F3; }
+  .ui.uco { border-left-color:#37E686; }
+  .ui.ucd { border-left-color:#464646; }
+  .ui.ud { border-left-color:#F43939; }
+  .ui-sit { font-size:16px; font-weight:700; color:#191919; margin-bottom:3px; }
+  .ui-p { font-size:16px; color:#727272; line-height:1.55; }
+
+  /* Chat 대비 메모 */
+  .vs { font-size:16px; color:#888; padding:10px 0 0 0; border-top:1px dashed #E0E0E0; margin-top:14px; line-height:1.6; }
+
+  /* SS placeholder */
+  .ss { background:#F6F6F6; border:1.5px dashed #BDBDBD; border-radius:8px; padding:14px; text-align:center; font-size:16px; color:#888; margin-top:12px; min-height:64px; display:flex; align-items:center; justify-content:center; }
+  .ss-row { display:flex; gap:8px; margin-top:12px; }
+  .ss-row .ss { flex:1; margin-top:0; }
+
+  /* 플로우 */
+  .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:10px 0; }
+  .fi2 { border:1.5px solid #2196F3; border-radius:7px; padding:8px 7px; font-size:16px; font-weight:700; color:#13568B; }
+  .fa { color:#BDBDBD; font-size:16px; }
+
+  /* 팁/경고 — 박스 없이 컬러 바 */
+  .tip  { padding:10px 16px 0px; font-size:17px; color:#1E6B35; line-height:1.2;  border-radius:0 6px 6px 0; }
+  .warn { padding:10px 16px 0px; font-size:17px; color:#B71C1C; margin-top:14px; line-height:1.2;  border-radius:0 6px 6px 0; }
+
+  /* 요약 4단 */
+  .sum-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:0; border:1.5px solid #E8E8E8; border-radius:10px; overflow:hidden; }
+  .sc { padding:20px 24px; border-right:1px solid #E8E8E8; border-bottom:1px solid #E8E8E8; position:relative; }
+  .sc:nth-child(2n) { border-right:none; }
+  .sc:nth-child(3), .sc:nth-child(4) { border-bottom:none; }
+  .sc::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; }
+  .sc.sc1::before { background:#2196F3; }
+  .sc.sc2::before { background:#37E686; }
+  .sc.sc3::before { background:#464646; }
+  .sc.sc4::before { background:#F43939; }
+  .sc-name { font-size:19px; font-weight:600; color:#191919; margin-bottom:4px; margin-top:4px; }
+  .sc-desc { font-size:16px; color:#5C5C5C; line-height:1.5; margin-bottom:10px; }
+  .sc-chips { display:flex; flex-wrap:wrap; gap:5px; }
+
+  /* 준비중 */
+  .coming { text-align:center; padding:80px 20px; }
+  .coming-icon { font-size:40px; margin-bottom:16px; }
+  .coming-ttl { font-size:24px; font-weight:600; margin-bottom:8px; }
+  .coming-desc { font-size:17px; color:#888; }
+
+  /* 푸터 */
+  .footer { border-top:1px solid #E0E0E0; padding-top:16px; margin-top:12px; display:flex; justify-content:space-between; font-size:16px; color:#888; flex-wrap:wrap; gap:6px; }
+
+  @media(max-width:640px){
+    .wrap { padding:28px 20px 60px; }
+    .doc-title { font-size:28px; }
+    .doc-hd { flex-direction:column; align-items:flex-start; }
+    .model-row { grid-template-columns:1fr; }
+    .mc { border-right:none; border-bottom:1px solid #E8E8E8; }
+    .mc:last-child { border-bottom:none; }
+    .fcols { grid-template-columns:1fr; }
+    .sum-grid { grid-template-columns:1fr; }
+    .sc { border-right:none !important; }
+    .func-one { display:none; }
+    .mnav-in { padding:0 16px; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="mnav">
+  <div class="mnav-in">
+    <div class="mtab on" onclick="sw('apr',this)">2026년 4월</div>
+    <div class="mtab" onclick="sw('may',this)">2026년 5월</div>
+  </div>
+</nav>
+
+<!-- ═══ 4월 ═══ -->
+<div id="m-apr" class="mcont on">
+<div class="wrap">
+
+  <!-- 문서 헤더 -->
+  <div class="doc-hd">
+    <h1 class="doc-title"><em>Claude 메뉴 알아보기</em></h1>
+    <div class="doc-hd-right">
+      <span class="pro-badge">Pro 기준</span>
+    </div>
+  </div>
+
+  <!-- 01 Desktop이란? -->
+  <div class="sec-card">
+    <div class="sec-hd">
+      <span class="sec-num">01</span>
+      <span class="sec-ttl">Claude Desktop이란?</span>
+    </div>
+    <div class="sec-body">
+      <p class="desc">웹 - 브라우저 대화용<br />앱 - PC에 설치해서 <strong>내 파일에 직접 접근</strong>하고 <strong>백그라운드 작업</strong>이 가능</p>
+      <table class="tbl">
+        <thead><tr><th class="rh">비교</th><th>웹 (claude.ai)</th><th>데스크탑 앱</th></tr></thead>
+        <tbody>
+          <tr><td class="rh">내 파일 접근</td><td><span class="no">✗ 직접 불가</span></td><td><span class="ok">✓ 폴더째로 가능</span></td></tr>
+          <tr><td class="rh">백그라운드 작업</td><td><span class="no">✗ 불가</span></td><td><span class="ok">✓ Cowork로 가능</span></td></tr>
+          <tr><td class="rh">화면 캡처</td><td><span class="no">✗ 불가</span></td><td><span class="ok">✓ Mac 지원</span></td></tr>
+          <tr><td class="rh">Claude Design</td><td><span class="ok">✓ 웹 전용</span></td><td><span class="no">✗ 미지원 (베타)</span></td></tr>
+          <tr><td class="rh">요금</td><td colspan="2" style="text-align:center;font-weight:400;color:#191919;">$20 / 월 — 웹 + 앱 동일 구독</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 02 모델 -->
+  <div class="sec-card">
+    <div class="sec-hd">
+      <span class="sec-num">02</span>
+      <span class="sec-ttl">모델 3가지 — 두뇌 버전 선택</span>
+    </div>
+    <div class="sec-body">
+      <p class="desc">- 모델에 따라 <strong>품질 · 속도 · 토큰 소모량</strong>이 다름 <br />- Pro면 3가지 모두 선택 가능</p>
+
+      <div class="model-row">
+        <div class="mc m1">
+          <div class="mc-lbl">MODEL 01</div>
+          <div class="mc-name">Haiku 4.5</div>
+          <div class="mc-desc">가볍고 빠름. 간단 요약·단답형 질문용</div>
+          <div class="chips"><span class="chip cg">가장 빠름</span><span class="chip cg">토큰 적음</span></div>
+        </div>
+        <div class="mc m2">
+          <div class="mc-lbl">MODEL 02 · 기본값</div>
+          <div class="mc-name">Sonnet 4.6</div>
+          <div class="mc-desc">속도·품질 밸런스. Chat·Cowork 기본 모델</div>
+          <div class="chips"><span class="chip cb">✓ Chat 기본</span><span class="chip cb">✓ Cowork 기본</span></div>
+        </div>
+        <div class="mc m3">
+          <div class="mc-lbl">MODEL 03</div>
+          <div class="mc-name">Opus 4.7</div>
+          <div class="mc-desc">가장 강력. 복잡한 분석·Design용</div>
+          <div class="chips"><span class="chip cn">가장 정확</span><span class="chip cd">토큰 많음</span></div>
+        </div>
+      </div>
+
+      <div class="sub-ttl">기능별 토큰 소모량</div>
+      <table class="ttbl">
+        <thead><tr><th class="rh" style="background: #999; color:#fff">기능</th><th style="width:150px;">모델</th><th>소모량</th><th style="width:170px;">Pro 한도 영향</th></tr></thead>
+        <tbody>
+          <tr><td class="rh">Chat 대화</td><td>Sonnet 4.6</td><td><div class="bw"><div class="br"><div class="bf f1"></div></div><span class="bl blg">적음</span></div></td><td>하루 종일 여유</td></tr>
+          <tr><td class="rh">Chat 파일 첨부</td><td>Sonnet 4.6</td><td><div class="bw"><div class="br"><div class="bf f2"></div></div><span class="bl blg">조금</span></div></td><td>파일 크기에 따라</td></tr>
+          <tr><td class="rh">Cowork 분석</td><td>Sonnet / Opus</td><td><div class="bw"><div class="br"><div class="bf f3"></div></div><span class="bl blb">보통</span></div></td><td>긴 세션 시 주의</td></tr>
+          <tr><td class="rh">Code 작업</td><td>Sonnet / Opus</td><td><div class="bw"><div class="br"><div class="bf f4"></div></div><span class="bl blr">많음</span></div></td><td>파일 많을수록 급증</td></tr>
+          <tr><td class="rh">Claude Design</td><td>Opus 4.7</td><td><div class="bw"><div class="br"><div class="bf f5"></div></div><span class="bl blr">매우 많음</span></div></td><td>세션 수 제한 권장</td></tr>
+        </tbody>
+      </table>
+      <div class="warn"><strong>* Pro = 5시간 롤링 한도.</strong> Cowork·Code·Design은 Chat보다 10~100배 소모.</div>
+      <div class="tip"><strong>* 절약 팁 :</strong> 간단 질문 → Haiku / 일반 업무 → Sonnet / 복잡 멀티파일 → Opus</div>
+    </div>
+  </div>
+
+  <!-- 03 기능 -->
+  <div class="sec-card">
+    <div class="sec-hd">
+      <span class="sec-num">03</span>
+      <span class="sec-ttl">기능 살펴보기</span>
+    </div>
+    <div class="sec-body" style="padding:0;">
+    <div class="func-list">
+
+      <!-- Chat -->
+      <div class="func-item">
+        <div class="func-hd" onclick="tf(this)" style="background:#E9F5FE; margin-bottom: 20px">
+          <div class="func-bar fb-chat"></div>
+          <div class="func-hd-in">
+            <div class="func-hd-left">
+              <span class="func-name">Chat</span>
+              <span class="func-one">무료 AI처럼 대화 + Figma·Drive 연결</span>
+            </div>
+            <span class="func-mdl fm-c">Sonnet 4.6</span>
+          </div>
+        </div>
+        <div class="func-body op">
+          <div class="fcols">
+            <div>
+              <div class="fcol-ttl">주요 기능</div>
+              <div class="flfl">
+                <div class="fi"><span class="fi-icon"></span><span><strong>파일 드래그 앤 드롭</strong><br />PDF, 이미지, Figma 캡처 분석</span></div>
+                <div class="fi"><span class="fi-icon"></span><span><strong>커넥터</strong><br />Figma, Google Drive, Gmail 연동</span></div>
+                <div class="fi"><span class="fi-icon"></span><span><strong>화면 캡처 (Mac)</strong><br />Option 더블탭 → 현재 화면 캡처 후 질문</span></div>
+                <div class="fi"><span class="fi-icon"></span><span><strong>Projects</strong><br />지시사항·파일 저장 후 대화 이어가기</span></div>
+                <div class="fi"><span class="fi-icon"></span><span><strong>음성 입력</strong><br />말로 질문, 텍스트로 답변</span></div>
+              </div>
+              <div class="ss">📷 Chat 탭 전체 — 모델 선택 / 파일 첨부 / 커넥터 위치</div>
+            </div>
+            <div>
+              <div class="fcol-ttl">디자이너 실무 예시</div>
+              <div class="ul">
+                <div class="ui uc"><div class="ui-sit">Figma 링크 분석</div><div class="ui-p">이 화면 스펙 정리해서 개발자 전달용 문서 만들어줘</div></div>
+                <div class="ui uc"><div class="ui-sit">PDF 레퍼런스</div><div class="ui-p">이 앱 PDF에서 우리에게 적용할 UX 패턴 뽑아줘</div></div>
+                <div class="ui uc"><div class="ui-sit">화면 캡처 질문</div><div class="ui-p">지금 화면에서 접근성 문제 있는 부분 찾아줘</div></div>
+                <div class="ui uc"><div class="ui-sit">카피 작성</div><div class="ui-p">키오스크 결제 완료 안내 문구 3가지 버전으로 써줘</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cowork -->
+      <div class="func-item">
+        <div class="func-hd" onclick="tf(this)" style="background:#E9FEEF; margin-bottom: 20px">
+          <div class="func-bar fb-cowork"></div>
+          <div class="func-hd-in">
+            <div class="func-hd-left">
+              <span class="func-name">Cowork</span>
+              <span class="func-one">폴더 맡기면 알아서 분석·정리</span>
+            </div>
+            <span class="func-mdl fm-cw">Sonnet / Opus</span>
+          </div>
+        </div>
+        <div class="func-body op">
+          <div class="fcols">
+            <div>
+              <div class="fcol-ttl">주요 기능</div>
+              <div class="fl">
+                <div class="fi"><span class="fi-icon"></span><span><strong>폴더 통째로 작업</strong><br />폴더 권한 주면 모든 파일 읽고 처리</span></div>
+                <div class="fi"><span class="fi-icon"></span><span><strong>멀티 소스 처리</strong><br />PDF·이미지·엑셀 동시에 하나로 정리</span></div>
+                <div class="fi"><span class="fi-icon"></span><span><strong>백그라운드 실행</strong><br />자리 비워도 완료 후 알림</span></div>
+                <div class="fi"><span class="fi-icon"></span><span><strong>파일 직접 저장</strong><br />결과물을 내 폴더에 바로 저장</span></div>
+              </div>
+              <div class="ss">📷 Cowork 탭 전체 — 폴더 연결 버튼 위치</div>
+              <div class="vs"><strong>Chat 대비:</strong> 파일 하나씩 올릴 필요 없음. 폴더째로 맡기면 전부 처리.</div>
+            </div>
+            <div>
+              <div class="fcol-ttl">디자이너 실무 예시</div>
+              <div class="ul">
+                <div class="ui uco"><div class="ui-sit">경쟁사 앱 분석</div><div class="ui-p">이 폴더 스크린샷 30장 — 공통 패턴과 우리랑 다른 점</div></div>
+                <div class="ui uco"><div class="ui-sit">회의록 → 액션아이템</div><div class="ui-p">이 폴더 회의록들 읽고 디자인팀 액션아이템만 뽑아줘</div></div>
+                <div class="ui uco"><div class="ui-sit">스터디 자료 정리</div><div class="ui-p">AI PDF 10개 읽고 월별 요약 정리해줘</div></div>
+                <div class="ui uco"><div class="ui-sit">설문 분석</div><div class="ui-p">설문 엑셀 분석해서 불만사항 카테고리로 나눠줘</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Code -->
+      <div class="func-item">
+        <div class="func-hd" onclick="tf(this)" style="background:#F3F3F3; margin-bottom: 20px">
+          <div class="func-bar fb-code"></div>
+          <div class="func-hd-in">
+            <div class="func-hd-left">
+              <span class="func-name">Code</span>
+              <span class="func-one">HTML/CSS 결과물 눈으로 보면서 제작</span>
+            </div>
+            <span class="func-mdl fm-cd">Sonnet / Opus</span>
+          </div>
+        </div>
+        <div class="func-body op">
+          <div class="fcols">
+            <div>
+              <div class="fcol-ttl">주요 기능</div>
+              <div class="fl">
+                <div class="fi"><span class="fi-icon"></span><span><strong>실시간 미리보기</strong><br />코드 생성하면서 결과 바로 확인</span></div>
+                <div class="fi"><span class="fi-icon"></span><span><strong>파일 직접 저장</strong><br />HTML/CSS를 내 폴더에 바로 저장</span></div>
+                <div class="fi"><span class="fi-icon"></span><span><strong>여러 파일 동시 작업</strong><br />파일 여러 개 오가며 수정</span></div>
+                <div class="fi"><span class="fi-icon"></span><span><strong>Figma → 코드 + 미리보기</strong><br />변환 후 확인까지 한 번에</span></div>
+              </div>
+              <div class="ss">📷 Code 탭 — 미리보기 패널 열린 상태</div>
+              <div class="vs"><strong>Chat 대비 :</strong> Chat은 코드만 텍스트로 나옴. Code는 미리보기 패널에서 바로 확인.</div>
+            </div>
+            <div>
+              <div class="fcol-ttl">디자이너 실무 예시</div>
+              <div class="ul">
+                <div class="ui ucd"><div class="ui-sit">스터디 공유 문서</div><div class="ui-p">스터디 내용 브랜드 컬러 적용해서 HTML로 만들어줘</div></div>
+                <div class="ui ucd"><div class="ui-sit">컴포넌트 시안</div><div class="ui-p">Figma 링크 보고 버튼 컴포넌트 HTML로 만들어줘</div></div>
+                <div class="ui ucd"><div class="ui-sit">스타일 가이드</div><div class="ui-p">브랜드 컬러·타이포·컴포넌트 HTML 가이드 만들어줘</div></div>
+                <div class="ui ucd"><div class="ui-sit">인터랙션 프로토타입</div><div class="ui-p">탭 전환 애니메이션 프로토타입 만들어줘</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Design -->
+      <div class="func-item">
+        <div class="func-hd" onclick="tf(this)" style="background:#FEE9E9; margin-bottom: 20px" >
+          <div class="func-bar fb-design"></div>
+          <div class="func-hd-in">
+            <div class="func-hd-left">
+              <span class="func-name">Claude Design</span>
+              <span class="func-one">텍스트 → 프로토타입·슬라이드 생성</span>
+            </div>
+            <span class="func-mdl fm-d">Opus 4.7</span>
+          </div>
+        </div>
+        <div class="func-body op">
+          <div class="warn" style="margin-bottom:16px;">정식 출시 전 베타 ( 데스크탑 앱 미지원, 앱에서 아이콘이 생기면 사용 가능 )</div>
+          <div class="fcols">
+            <div>
+              <div class="fcol-ttl">접근 방법</div>
+              <div class="flow">
+                <div class="fi2">claude 웹</div>
+                <div class="fa">→</div>
+                <div class="fi2">사이드바</div>
+                <div class="fa">→</div>
+                <div class="fi2">Design 캔버스</div>
+              </div>
+              <div class="ss-row">
+                <div class="ss">📷 사이드바 팔레트 아이콘</div>
+                <div class="ss">📷 Design 캔버스 화면</div>
+              </div>
+              <div class="fcol-ttl" style="margin-top:18px;">주요 기능</div>
+              <div class="fl">
+                <div class="fi"><span class="fi-icon"></span><span><strong>프로토타입 생성</strong><br/>말로 설명하면 캔버스에 즉시 생성</span></div>
+                <div class="fi"><span class="fi-icon"></span><span><strong>디자인 시스템 연동</strong><br/>Figma 연결 → 브랜드 컬러·컴포넌트 자동 적용</span></div>
+                <div class="fi"><span class="fi-icon"></span><span><strong>내보내기</strong><br/>PDF / PPTX / HTML / Code 핸드오프 번들</span></div>
+              </div>
+              <div class="fcol-ttl" style="margin-top:18px;">Design → Code 흐름</div>
+              <div class="flow">
+                <div class="fi2" style="font-size:14px;">Design<br><span style="font-weight:400;">시각화</span></div>
+                <div class="fa">→</div>
+                <div class="fi2" style="font-size:14px;">핸드오프<br><span style="font-weight:400;">컴포넌트·토큰</span></div>
+                <div class="fa">→</div>
+                <div class="fi2" style="font-size:14px;">Code<br><span style="font-weight:400;">실제 구현</span></div>
+              </div>
+            </div>
+            <div>
+              <div class="fcol-ttl">디자이너 실무 예시</div>
+              <div class="ul">
+                <div class="ui ud"><div class="ui-sit">아이디어 시각화</div><div class="ui-p">키오스크 주문 화면 레이아웃 3가지 보여줘</div></div>
+                <div class="ui ud"><div class="ui-sit">발표 슬라이드</div><div class="ui-p">AI 스터디 내용으로 팀 공유용 슬라이드 만들어줘</div></div>
+                <div class="ui ud"><div class="ui-sit">반응형 확인</div><div class="ui-p">이 화면 모바일·태블릿·데스크탑 3개 만들어줘</div></div>
+                <div class="ui ud"><div class="ui-sit">접근성 검토</div><div class="ui-p">WCAG 2.1 AA 기준으로 문제 부분 찾아서 수정해줘</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="warn">* Opus 4.7 — 토큰 소모 가장 많음. 처음엔 기본 컴포넌트로 시작 권장</div>
+        </div>
+      </div>
+
+    </div>
+    </div>
+  </div>
+
+  <!-- 04 요약 -->
+  <div class="sec-card">
+    <div class="sec-hd">
+      <span class="sec-num">04</span>
+      <span class="sec-ttl">한눈에 정리</span>
+    </div>
+    <div class="sec-body">
+      <div class="sum-grid">
+        <div class="sc sc1">
+          <div class="sc-name">Chat</div>
+          <div class="sc-desc">기본 대화. 파일·커넥터 연결. 토큰 적음.</div>
+          <div class="sc-chips"><span class="chip cb">Sonnet 기본</span><span class="chip cg">토큰 적음</span><span class="chip cd">★★★★</span></div>
+        </div>
+        <div class="sc sc2">
+          <div class="sc-name">Cowork</div>
+          <div class="sc-desc">폴더 통째로 분석·정리. 백그라운드 실행.</div>
+          <div class="sc-chips"><span class="chip cb">Sonnet / Opus</span><span class="chip cd">토큰 많음</span><span class="chip cd">★★★★</span></div>
+        </div>
+        <div class="sc sc3">
+          <div class="sc-name">Code</div>
+          <div class="sc-desc">미리보기 보면서 HTML 제작. 파일 직접 저장.</div>
+          <div class="sc-chips"><span class="chip cb">Sonnet / Opus</span><span class="chip cd">토큰 많음</span><span class="chip cd">★★★</span></div>
+        </div>
+        <div class="sc sc4">
+          <div class="sc-name">Claude Design</div>
+          <div class="sc-desc">말로 설명 → 시각 결과물. 웹 전용 베타.</div>
+          <div class="sc-chips"><span class="chip cb">Opus 4.7</span><span class="chip cd">토큰 매우 많음</span><span class="chip cd">★★★★★</span></div>
+        </div>
+      </div>
+      <div class="tip" style="margin-top:16px;"><strong>추천 워크플로우:</strong> Design (시각화) → Chat (스펙 정리) → Cowork (대량 문서) → Code (HTML 산출물)</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>UX Design Part · AI Study · 2026.04</span>
+    <span>Claude Desktop 앱 완전 정복 v3.0</span>
+  </div>
+
+</div>
+</div>
+
+<!-- ═══ 5월 ═══ -->
+<div id="m-may" class="mcont">
+<div class="wrap">
+  <div class="coming">
+    <div class="coming-icon">🗓️</div>
+    <div class="coming-ttl">5월 스터디 준비 중</div>
+    <div class="coming-desc">매월 마지막 주 수요일 회의 이후 업데이트됩니다.</div>
+  </div>
+</div>
+</div>
+
+<script>
+function sw(id, el) {
+  document.querySelectorAll('.mcont').forEach(e => e.classList.remove('on'));
+  document.querySelectorAll('.mtab').forEach(e => e.classList.remove('on'));
+  document.getElementById('m-' + id).classList.add('on');
+  el.classList.add('on');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function tf(hd) {
+  const body = hd.closest('.func-item').querySelector('.func-body');
+  body.classList.toggle('op');
+}
+</script>
+</body>
+</html>
